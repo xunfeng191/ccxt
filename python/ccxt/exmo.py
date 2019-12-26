@@ -640,11 +640,14 @@ class exmo(Exchange):
         }
         response = self.publicGetOrderBook(self.extend(request, params))
         result = {}
-        ids = list(response.keys())
-        for i in range(0, len(ids)):
-            id = ids[i]
-            symbol = self.find_symbol(id)
-            result[symbol] = self.parse_order_book(response[id], None, 'bid', 'ask')
+        marketIds = list(response.keys())
+        for i in range(0, len(marketIds)):
+            marketId = marketIds[i]
+            symbol = marketId
+            if marketId in self.markets_by_id:
+                market = self.markets_by_id[marketId]
+                symbol = market['symbol']
+            result[symbol] = self.parse_order_book(response[marketId], None, 'bid', 'ask')
         return result
 
     def parse_ticker(self, ticker, market=None):

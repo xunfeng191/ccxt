@@ -90,6 +90,7 @@ class ftx(Exchange):
                         'orders/{order_id}',
                         'orders/by_client_id/{client_order_id}',
                         'conditional_orders',  # ?market={market}
+                        'conditional_orders/history',  # ?market={market}
                         'fills',  # ?market={market}
                         'funding_payments',
                         'lt/balances',
@@ -190,22 +191,10 @@ class ftx(Exchange):
                 'fee': None,
                 'precision': None,
                 'limits': {
-                    'amount': {
-                        'min': None,
-                        'max': None,
-                    },
-                    'price': {
-                        'min': None,
-                        'max': None,
-                    },
-                    'cost': {
-                        'min': None,
-                        'max': None,
-                    },
-                    'withdraw': {
-                        'min': None,
-                        'max': None,
-                    },
+                    'withdraw': {'min': None, 'max': None},
+                    'amount': {'min': None, 'max': None},
+                    'price': {'min': None, 'max': None},
+                    'cost': {'min': None, 'max': None},
                 },
             }
         return result
@@ -440,12 +429,14 @@ class ftx(Exchange):
         tickers = self.safe_value(response, 'result', [])
         return self.parse_tickers(tickers, symbols)
 
-    def fetch_order_book(self, symbol, params={}):
+    def fetch_order_book(self, symbol, limit=None, params={}):
         self.load_markets()
         market = self.market(symbol)
         request = {
             'market_name': market['id'],
         }
+        if limit is not None:
+            request['depth'] = limit  # max 100, default 20
         response = self.publicGetMarketsMarketNameOrderbook(self.extend(request, params))
         #
         #     {
@@ -566,7 +557,7 @@ class ftx(Exchange):
         symbol = None
         if marketId is not None:
             if marketId in self.markets_by_id:
-                market = self.markets_by_id
+                market = self.markets_by_id[marketId]
                 symbol = market['symbol']
             else:
                 base = self.safe_currency_code(self.safe_string(trade, 'baseCurrency'))

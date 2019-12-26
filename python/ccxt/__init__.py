@@ -22,7 +22,7 @@
 
 # ----------------------------------------------------------------------------
 
-__version__ = '1.20.15'
+__version__ = '1.21.19'
 
 # ----------------------------------------------------------------------------
 
@@ -119,7 +119,6 @@ from ccxt.coinbasepro import coinbasepro                    # noqa: F401
 from ccxt.coincheck import coincheck                        # noqa: F401
 from ccxt.coinegg import coinegg                            # noqa: F401
 from ccxt.coinex import coinex                              # noqa: F401
-from ccxt.coinexchange import coinexchange                  # noqa: F401
 from ccxt.coinfalcon import coinfalcon                      # noqa: F401
 from ccxt.coinfloor import coinfloor                        # noqa: F401
 from ccxt.coingi import coingi                              # noqa: F401
@@ -127,7 +126,6 @@ from ccxt.coinmarketcap import coinmarketcap                # noqa: F401
 from ccxt.coinmate import coinmate                          # noqa: F401
 from ccxt.coinone import coinone                            # noqa: F401
 from ccxt.coinspot import coinspot                          # noqa: F401
-from ccxt.cointiger import cointiger                        # noqa: F401
 from ccxt.coolcoin import coolcoin                          # noqa: F401
 from ccxt.coss import coss                                  # noqa: F401
 from ccxt.crex24 import crex24                              # noqa: F401
@@ -164,10 +162,8 @@ from ccxt.liquid import liquid                              # noqa: F401
 from ccxt.livecoin import livecoin                          # noqa: F401
 from ccxt.luno import luno                                  # noqa: F401
 from ccxt.lykke import lykke                                # noqa: F401
-from ccxt.mandala import mandala                            # noqa: F401
 from ccxt.mercado import mercado                            # noqa: F401
 from ccxt.mixcoins import mixcoins                          # noqa: F401
-from ccxt.negociecoins import negociecoins                  # noqa: F401
 from ccxt.oceanex import oceanex                            # noqa: F401
 from ccxt.okcoincny import okcoincny                        # noqa: F401
 from ccxt.okcoinusd import okcoinusd                        # noqa: F401
@@ -184,6 +180,7 @@ from ccxt.theocean import theocean                          # noqa: F401
 from ccxt.therock import therock                            # noqa: F401
 from ccxt.tidebit import tidebit                            # noqa: F401
 from ccxt.tidex import tidex                                # noqa: F401
+from ccxt.timex import timex                                # noqa: F401
 from ccxt.upbit import upbit                                # noqa: F401
 from ccxt.vaultoro import vaultoro                          # noqa: F401
 from ccxt.vbtc import vbtc                                  # noqa: F401
@@ -247,7 +244,6 @@ exchanges = [
     'coincheck',
     'coinegg',
     'coinex',
-    'coinexchange',
     'coinfalcon',
     'coinfloor',
     'coingi',
@@ -255,7 +251,6 @@ exchanges = [
     'coinmate',
     'coinone',
     'coinspot',
-    'cointiger',
     'coolcoin',
     'coss',
     'crex24',
@@ -292,10 +287,8 @@ exchanges = [
     'livecoin',
     'luno',
     'lykke',
-    'mandala',
     'mercado',
     'mixcoins',
-    'negociecoins',
     'oceanex',
     'okcoincny',
     'okcoinusd',
@@ -312,6 +305,7 @@ exchanges = [
     'therock',
     'tidebit',
     'tidex',
+    'timex',
     'upbit',
     'vaultoro',
     'vbtc',

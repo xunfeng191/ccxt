@@ -652,11 +652,15 @@ module.exports = class exmo extends Exchange {
         };
         const response = await this.publicGetOrderBook (this.extend (request, params));
         const result = {};
-        ids = Object.keys (response);
-        for (let i = 0; i < ids.length; i++) {
-            const id = ids[i];
-            const symbol = this.findSymbol (id);
-            result[symbol] = this.parseOrderBook (response[id], undefined, 'bid', 'ask');
+        const marketIds = Object.keys (response);
+        for (let i = 0; i < marketIds.length; i++) {
+            const marketId = marketIds[i];
+            let symbol = marketId;
+            if (marketId in this.markets_by_id) {
+                const market = this.markets_by_id[marketId];
+                symbol = market['symbol'];
+            }
+            result[symbol] = this.parseOrderBook (response[marketId], undefined, 'bid', 'ask');
         }
         return result;
     }

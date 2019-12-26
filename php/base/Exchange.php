@@ -35,7 +35,7 @@ use kornrunner\Solidity;
 use Elliptic\EC;
 use BN\BN;
 
-$version = '1.20.15';
+$version = '1.21.19';
 
 // rounding mode
 const TRUNCATE = 0;
@@ -54,7 +54,7 @@ const PAD_WITH_ZERO = 1;
 
 class Exchange {
 
-    const VERSION = '1.20.15';
+    const VERSION = '1.21.19';
 
     public static $eth_units = array (
         'wei'        => '1',
@@ -136,7 +136,6 @@ class Exchange {
         'coincheck',
         'coinegg',
         'coinex',
-        'coinexchange',
         'coinfalcon',
         'coinfloor',
         'coingi',
@@ -144,7 +143,6 @@ class Exchange {
         'coinmate',
         'coinone',
         'coinspot',
-        'cointiger',
         'coolcoin',
         'coss',
         'crex24',
@@ -181,10 +179,8 @@ class Exchange {
         'livecoin',
         'luno',
         'lykke',
-        'mandala',
         'mercado',
         'mixcoins',
-        'negociecoins',
         'oceanex',
         'okcoincny',
         'okcoinusd',
@@ -201,6 +197,7 @@ class Exchange {
         'therock',
         'tidebit',
         'tidex',
+        'timex',
         'upbit',
         'vaultoro',
         'vbtc',
@@ -603,6 +600,10 @@ class Exchange {
         return http_build_query($array, '', $this->urlencode_glue);
     }
 
+    public function urlencode_with_array_repeat($array) {
+        return preg_replace('/%5B\d*%5D/', '', $this->urlencode($array));
+    }
+
     public function rawencode($array) {
         return urldecode($this->urlencode($array));
     }
@@ -780,10 +781,6 @@ class Exchange {
         return array();
     }
 
-    public function __destruct() {
-        curl_close ($this->curl);
-    }
-
     public function __construct($options = array()) {
         // todo auto-camelcasing for methods in PHP
         // $method_names = get_class_methods ($this);
@@ -802,8 +799,10 @@ class Exchange {
         // }
 
         $this->defined_rest_api = array();
-        $this->curl = curl_init();
+        $this->curl = null;
         $this->curl_options = array(); // overrideable by user, empty by default
+        $this->curl_reset = true;
+        $this->curl_close = false;
 
         $this->id = null;
 
@@ -1141,7 +1140,7 @@ class Exchange {
             $digest = static::hash($request, $hash, 'hex');
         }
         $ec = new EC(strtolower($algorithm));
-        $key = $ec->keyFromPrivate($secret);
+        $key = $ec->keyFromPrivate(ltrim($secret, '0x'));
         $ellipticSignature = $key->sign($digest, 'hex', array('canonical' => true));
         $count = new BN ('0');
         $minimumSize = (new BN ('1'))->shln (8 * 31)->sub (new BN ('1'));
@@ -1149,10 +1148,11 @@ class Exchange {
             $ellipticSignature = $key->sign($digest, 'hex', array('canonical' => true, 'extraEntropy' => $count->toArray('le', 32)));
             $count = $count->add(new BN('1'));
         }
-        $signature = array();
-        $signature['r'] = $ellipticSignature->r->bi->toHex();
-        $signature['s'] = $ellipticSignature->s->bi->toHex();
-        $signature['v'] = $ellipticSignature->recoveryParam;
+        $signature = array(
+            'r' =>  $ellipticSignature->r->bi->toHex(),
+            's' => $ellipticSignature->s->bi->toHex(),
+            'v' => $ellipticSignature->recoveryParam,
+        );
         return $signature;
     }
 
@@ -1251,10 +1251,16 @@ class Exchange {
         $verbose_headers = $headers;
 
         // https://github.com/ccxt/ccxt/issues/5914
-        // we don't do a reset here to save those cookies in between the calls
-        // if the user wants to reset the curl handle between his requests
-        // then curl_reset can be called manually in userland
-        // curl_reset($this->curl);
+        if ($this->curl) {
+            if ($this->curl_close) {
+                curl_close($this->curl); // we properly close the curl channel here to save cookies
+                $this->curl = curl_init();
+            } else if ($this->curl_reset) {
+                curl_reset($this->curl); // this is the default
+            }
+        } else {
+            $this->curl = curl_init();
+        }
 
         curl_setopt($this->curl, CURLOPT_URL, $url);
 
@@ -1453,7 +1459,7 @@ class Exchange {
     public function set_markets($markets, $currencies = null) {
         $values = is_array($markets) ? array_values($markets) : array();
         for ($i = 0; $i < count($values); $i++) {
-            $values[$i] = array_merge(
+            $values[$i] = array_replace_recursive(
                 $this->fees['trading'],
                 array('precision' => $this->precision, 'limits' => $this->limits),
                 $values[$i]
@@ -2332,33 +2338,6 @@ class Exchange {
                         $this->currencies[$code] : $code;
     }
 
-    public function find_market($string) {
-        if (!isset($this->markets)) {
-            throw new ExchangeError($this->id . ' markets not loaded');
-        }
-        if (gettype($string) === 'string') {
-            if (isset($this->markets_by_id[$string])) {
-                return $this->markets_by_id[$string];
-            }
-
-            if (isset($this->markets[$string])) {
-                return $this->markets[$string];
-            }
-        }
-
-        return $string;
-    }
-
-    public function find_symbol($string, $market = null) {
-        if (!isset($market)) {
-            $market = $this->find_market($string);
-        }
-        if ((gettype($market) === 'array') && static::is_associative($market)) {
-            return $market['symbol'];
-        }
-        return $string;
-    }
-
     public function market($symbol) {
         if (!isset($this->markets)) {
             throw new ExchangeError($this->id . ' markets not loaded');
@@ -2762,9 +2741,10 @@ class Exchange {
     }
 
     public static function hashMessage($message) {
-        $buffer = unpack('C*', hex2bin($message));
+        $trimmed = ltrim($message, '0x');
+        $buffer = unpack('C*', hex2bin($trimmed));
         $prefix = bin2hex("\u{0019}Ethereum Signed Message:\n" . sizeof($buffer));
-        return '0x' . Keccak::hash(hex2bin($prefix . $message), 256);
+        return '0x' . Keccak::hash(hex2bin($prefix . $trimmed), 256);
     }
 
     public static function signHash($hash, $privateKey) {

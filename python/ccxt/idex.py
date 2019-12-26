@@ -102,6 +102,10 @@ class idex(Exchange):
                 'apiKey': False,
                 'secret': False,
             },
+            'commonCurrencies': {
+                'ONE': 'Menlo One',
+                'FT': 'Fabric Token',
+            },
         })
 
     def fetch_markets(self, params={}):
@@ -245,7 +249,7 @@ class idex(Exchange):
                 market = {'symbol': symbol}
             ticker = response[id]
             result[symbol] = self.parse_ticker(ticker, market)
-        return result
+        return self.filter_by_array(result, 'symbol', symbols)
 
     def fetch_ticker(self, symbol, params={}):
         self.load_markets()
